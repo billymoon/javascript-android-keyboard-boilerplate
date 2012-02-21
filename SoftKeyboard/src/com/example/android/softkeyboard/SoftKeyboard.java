@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.WebView;
 import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -73,6 +74,8 @@ public class SoftKeyboard extends InputMethodService
     
     private String mWordSeparators;
     
+    private WebView myWebView = null;
+
     /**
      * Main initialization of the input method component.  Be sure to call
      * to super class.
@@ -82,6 +85,17 @@ public class SoftKeyboard extends InputMethodService
         mWordSeparators = getResources().getString(R.string.word_separators);
     }
     
+    /**
+     * Creates interface with javascript inside web-view
+     */
+    private Object jsInterface = new Object() {
+
+        @SuppressWarnings("unused")
+        public void sendKeys(String keys) {
+            getCurrentInputConnection().setComposingText(keys, 1);
+        }
+
+    };
     /**
      * This is the point where you can do all of your UI initialization.  It
      * is called after creation and any configuration change.
@@ -111,7 +125,19 @@ public class SoftKeyboard extends InputMethodService
                 R.layout.input, null);
         mInputView.setOnKeyboardActionListener(this);
         mInputView.setKeyboard(mQwertyKeyboard);
-        return mInputView;
+        //return mInputView;
+        
+        View view = getLayoutInflater().inflate(R.layout.webinput, null);
+        myWebView = (WebView) view.findViewById(R.id.myWebView);
+        myWebView.getSettings().setJavaScriptEnabled(true);
+        myWebView.addJavascriptInterface(jsInterface, "android");
+
+        return view;
+   }
+
+    @Override public void onWindowShown() {
+        super.onWindowShown();      
+        myWebView.loadUrl("file:///android_asset/webinterface.htm");
     }
 
     /**
